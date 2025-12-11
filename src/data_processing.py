@@ -77,14 +77,12 @@ def get_missing_matrix(data):
     num_rows = data.shape[0]
     num_cols = len(data.dtype.names)
     
-    # Tạo ma trận chứa toàn số 0 (Kích thước: số dòng x số cột)
     missing_matrix = np.zeros((num_rows, num_cols), dtype=int)
     feature_names = list(data.dtype.names)
     
     for i, col_name in enumerate(feature_names):
         col = data[col_name]
         
-        # Tạo mask cho từng cột
         if col.dtype.kind in ['U', 'S']:
             is_missing = (np.char.strip(col) == '')
         else:
@@ -93,7 +91,6 @@ def get_missing_matrix(data):
             except:
                 is_missing = np.zeros(num_rows, dtype=bool)
         
-        # Gán vào cột tương ứng trong ma trận (True thành 1, False thành 0)
         missing_matrix[:, i] = is_missing.astype(int)
         
     return missing_matrix, feature_names
@@ -108,11 +105,9 @@ def get_category_stats(data, col_name, target_col='target'):
     
     stats = []
     for val in unique_vals:
-        # Xử lý nhãn rỗng
         val_str = str(val).strip()
         label = 'Unknown' if (val_str == '' or val_str == 'nan') else val_str
         
-        # Đếm số lượng
         mask = (col_data == val)
         c0 = np.sum((target_data[mask] == 0))
         c1 = np.sum((target_data[mask] == 1))
@@ -127,31 +122,24 @@ def get_category_stats(data, col_name, target_col='target'):
             'pct': pct
         })
     
-    # Sắp xếp giảm dần theo tổng số lượng
     stats.sort(key=lambda x: x['total'], reverse=True)
     return stats
 
 
 
-#---------------------------------------------------------------------------------------------------------------------
-# --- 1. CLEANING & CONVERSION FUNCTIONS ---
 
 def convert_experience(col):
     """
     Chuyển đổi cột experience (string) sang số (float).
     Logic: '<1' -> 0, '>20' -> 21, số giữ nguyên, còn lại -> NaN
     """
-    # Chuyển về string chuẩn, loại bỏ khoảng trắng
     col_str = np.char.strip(col.astype(str))
     
-    # Tạo mảng kết quả mặc định là NaN
     mapped = np.full(col_str.shape, np.nan, dtype=float)
     
-    # Áp dụng quy tắc
     mapped[col_str == '<1'] = 0
     mapped[col_str == '>20'] = 21
     
-    # Xử lý các giá trị là số
     numeric_mask = np.char.isdigit(col_str)
     mapped[numeric_mask] = col_str[numeric_mask].astype(float)
     
@@ -173,8 +161,6 @@ def convert_last_new_job(col):
     
     return mapped
 
-# --- 2. ENCODING FUNCTIONS (NUMPY ONLY) ---
-
 def ordinal_encode(col, mapping):
     """
     Mã hóa biến có thứ tự (Ordinal Encoding).
@@ -183,7 +169,6 @@ def ordinal_encode(col, mapping):
         mapping: Dictionary map giá trị {'Graduate': 0, 'Masters': 1...}
     """
     col_str = np.char.strip(col.astype(str))
-    # Mặc định gán -1 cho các giá trị không có trong mapping
     encoded = np.full(col_str.shape, -1, dtype=int)
     
     for key, val in mapping.items():
@@ -197,15 +182,11 @@ def one_hot_encode(col):
     Returns: Ma trận 0/1 và danh sách tên các cột mới.
     """
     unique_vals = np.unique(col)
-    # Loại bỏ giá trị 'nan' nếu không muốn tạo cột riêng cho nó
     unique_vals = unique_vals[unique_vals != 'nan'] 
     
-    # Broadcasting để tạo ma trận One-Hot: (N, 1) == (1, K) -> (N, K) boolean -> int
     one_hot_matrix = (col[:, None] == unique_vals[None, :]).astype(int)
     
     return one_hot_matrix, unique_vals
-
-# --- 3. SCALING FUNCTIONS ---
 
 def standard_scale(X):
     """
@@ -215,7 +196,6 @@ def standard_scale(X):
     mean = np.nanmean(X, axis=0)
     std = np.nanstd(X, axis=0)
     
-    # Tránh chia cho 0 nếu std = 0 (cột constant)
     std[std == 0] = 1
     
     return (X - mean) / std

@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# --- 1. ALGORITHMS ---
 
 class LogisticRegression:
     """
@@ -19,7 +18,6 @@ class LogisticRegression:
         self.losses = []
 
     def _sigmoid(self, x):
-        # Clip value to prevent overflow
         x = np.clip(x, -500, 500)
         return 1 / (1 + np.exp(-x))
 
@@ -30,19 +28,16 @@ class LogisticRegression:
         self.losses = []
 
         for _ in range(self.n_iters):
-            # Forward pass
+            
             linear_model = np.dot(X, self.weights) + self.bias
             y_predicted = self._sigmoid(linear_model)
 
-            # Compute gradients
+
             dw = (1 / n_samples) * np.dot(X.T, (y_predicted - y))
             db = (1 / n_samples) * np.sum(y_predicted - y)
-
-            # Update parameters
             self.weights -= self.lr * dw
             self.bias -= self.lr * db
             
-            # Compute Loss (Log Loss)
             eps = 1e-15
             y_pred_safe = np.clip(y_predicted, eps, 1 - eps)
             loss = -np.mean(y * np.log(y_pred_safe) + (1 - y) * np.log(1 - y_pred_safe))
@@ -75,15 +70,12 @@ class KNN:
         return np.array(y_pred)
 
     def _predict_single(self, x):
-        # Euclidean distance using broadcasting
         distances = np.sqrt(np.sum((self.X_train - x)**2, axis=1))
         k_indices = np.argsort(distances)[:self.k]
         k_nearest_labels = self.y_train[k_indices]
-        # Majority vote
         most_common = np.bincount(k_nearest_labels.astype(int)).argmax()
         return most_common
 
-# --- 2. METRICS ---
 
 def accuracy_score(y_true, y_pred):
     return np.mean(y_true == y_pred)
@@ -113,7 +105,6 @@ def confusion_matrix(y_true, y_pred):
     fn = np.sum((y_true == 1) & (y_pred == 0))
     return np.array([[tn, fp], [fn, tp]])
 
-# --- 3. VISUALIZATION CLASS ---
 
 class ModelVisualizer:
     """
@@ -156,12 +147,10 @@ class ModelVisualizer:
         width = 0.35
         fig, ax = plt.subplots(figsize=(12, 6))
         
-        # Plot bars for each model
         for i, (model_name, scores) in enumerate(scores_dict.items()):
             offset = width * i - (width/2)
             rects = ax.bar(x + offset, scores, width, label=model_name)
             
-            # Add labels on top of bars
             for rect in rects:
                 height = rect.get_height()
                 ax.annotate(f'{height:.2f}',

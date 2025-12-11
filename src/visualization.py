@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-# --- 1. MISSING VALUES VISUALIZATION ---
 
 def plot_missing_values(stats):
     """
@@ -10,7 +9,6 @@ def plot_missing_values(stats):
     Args:
         stats (list of dict): Danh sách thống kê giá trị thiếu từ data_processing.
     """
-    # Lọc các cột có dữ liệu thiếu > 0
     filtered_stats = [s for s in stats if s['count'] > 0]
     
     if not filtered_stats:
@@ -28,7 +26,6 @@ def plot_missing_values(stats):
     plt.title("Missing Values per Column (Descending Order)")
     plt.grid(axis='y', linestyle='--', alpha=0.5)
     
-    # Thêm số liệu lên đầu cột
     for bar in bars:
         height = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2., height,
@@ -47,17 +44,12 @@ def plot_missing_heatmap(missing_matrix, feature_names):
     """
     plt.figure(figsize=(14, 8))
     
-    # Vẽ heatmap
-    # cbar=True: Bật thanh màu
-    # yticklabels=False: Tắt nhãn trục Y vì quá nhiều dòng
     ax = sns.heatmap(missing_matrix, cbar=True, yticklabels=False, cmap='viridis')
     
-    # Cấu hình thanh màu (Color Bar)
     cbar = ax.collections[0].colorbar
     cbar.set_ticks([0.25, 0.75])
     cbar.set_ticklabels(['Present (0)', 'Missing (1)'])
     
-    # Cấu hình trục X
     plt.xticks(
         ticks=np.arange(len(feature_names)) + 0.5, 
         labels=feature_names, 
@@ -71,7 +63,6 @@ def plot_missing_heatmap(missing_matrix, feature_names):
     plt.show()
 
 
-# --- 2. DISTRIBUTION VISUALIZATION ---
 
 def plot_key_distributions(data):
     """
@@ -81,18 +72,14 @@ def plot_key_distributions(data):
     """
     plt.figure(figsize=(14, 6))
 
-    # Biểu đồ 1: City Development Index
     plt.subplot(1, 2, 1)
-    # Lưu ý: Cần truy cập đúng tên cột trong structured array
-    # Dùng data['cot'] thay vì data.cot nếu là structured array
     col_1 = data['city_development_index']
     sns.histplot(col_1, bins=20, kde=True, color='skyblue', edgecolor='black')
     plt.title('Distribution: City Development Index')
     plt.xlabel('City Development Index')
     plt.ylabel('Frequency')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
-
-    # Biểu đồ 2: Training Hours
+    
     plt.subplot(1, 2, 2)
     col_2 = data['training_hours']
     sns.histplot(col_2, bins=30, kde=True, color='salmon', edgecolor='black')
@@ -105,7 +92,6 @@ def plot_key_distributions(data):
     plt.show()
 
 
-# --- 3. BOXPLOTS (OUTLIERS & TARGET ANALYSIS) ---
 
 def plot_key_boxplots(data):
     """
@@ -114,22 +100,16 @@ def plot_key_boxplots(data):
     - Hàng 2: So sánh phân phối theo Target.
     """
     plt.figure(figsize=(14, 10))
-
-    # [1,1] Outlier Detection: City Index
     plt.subplot(2, 2, 1)
     sns.boxplot(x=data['city_development_index'], color='skyblue')
     plt.title('Outlier Detection: City Development Index')
     plt.xlabel('City Development Index')
 
-    # [1,2] Outlier Detection: Training Hours
     plt.subplot(2, 2, 2)
     sns.boxplot(x=data['training_hours'], color='salmon')
     plt.title('Outlier Detection: Training Hours')
     plt.xlabel('Training Hours')
-
-    # [2,1] Target Analysis: City Index vs Target
     plt.subplot(2, 2, 3)
-    # FIX WARNING: Thêm hue=data['target'] và legend=False
     sns.boxplot(
         x=data['target'], 
         y=data['city_development_index'], 
@@ -141,9 +121,7 @@ def plot_key_boxplots(data):
     plt.xlabel('Target')
     plt.ylabel('City Development Index')
 
-    # [2,2] Target Analysis: Training Hours vs Target
     plt.subplot(2, 2, 4)
-    # FIX WARNING: Thêm hue=data['target'] và legend=False
     sns.boxplot(
         x=data['target'], 
         y=data['training_hours'], 
@@ -157,9 +135,6 @@ def plot_key_boxplots(data):
 
     plt.tight_layout()
     plt.show()
-
-
-# --- 4. SCATTERPLOT (CORRELATION) ---
 
 def plot_key_scatter(data):
     """
@@ -191,11 +166,8 @@ def plot_categorical_count(data, col_name, title=None):
     - Tự động chuyển chuỗi rỗng '' thành 'Unknown'.
     - Tự động chọn bảng màu phù hợp.
     """
-    # 1. Lấy dữ liệu và đếm số lượng
     col_data = data[col_name]
     unique_vals, counts = np.unique(col_data, return_counts=True)
-    
-    # 2. Xử lý nhãn (Labels): Đổi '' thành 'Unknown'
     labels = []
     for val in unique_vals:
         val_str = str(val).strip()
@@ -204,23 +176,16 @@ def plot_categorical_count(data, col_name, title=None):
         else:
             labels.append(val_str)
             
-    # Sắp xếp giảm dần
     sorted_data = sorted(zip(labels, counts), key=lambda x: x[1], reverse=True)
     sorted_labels = [x[0] for x in sorted_data]
     sorted_counts = [x[1] for x in sorted_data]
 
-    # --- 3. CHỌN MÀU SẮC THÔNG MINH ---
     if col_name == 'gender':
-        # Màu riêng cho giới tính (như bạn yêu cầu trước đó)
-        colors = ['#4285F4', '#FBBC05', '#34A853', '#EA4335'] # Xanh, Vàng, Lục, Đỏ
+        colors = ['#4285F4', '#FBBC05', '#34A853', '#EA4335'] 
         if len(sorted_labels) > 4: colors += ['#9E9E9E'] * (len(sorted_labels) - 4)
         colors = colors[:len(sorted_labels)]
     else:
-        # Màu tự động cho các cột khác (VD: enrolled_university)
-        # Bảng màu 'Paired' hoặc 'Set2' rất dịu mắt và rõ ràng
         colors = sns.color_palette('Paired', n_colors=len(sorted_labels))
-
-    # 4. Vẽ biểu đồ
     plt.figure(figsize=(10, 6))
     bars = plt.bar(sorted_labels, sorted_counts, color=colors, edgecolor='black', alpha=0.85)
     
@@ -232,7 +197,6 @@ def plot_categorical_count(data, col_name, title=None):
     plt.ylabel('Count', fontsize=12)
     plt.grid(axis='y', linestyle='--', alpha=0.5)
     
-    # Thêm số liệu
     for bar in bars:
         height = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2., height,
@@ -246,7 +210,6 @@ def plot_category_vs_target(stats, col_name, title=None):
     """
     Vẽ biểu đồ dựa trên danh sách thống kê (stats) đã tính toán.
     """
-    # Tách dữ liệu từ list of dicts
     labels = [s['label'] for s in stats]
     counts_0 = [s['0'] for s in stats]
     counts_1 = [s['1'] for s in stats]
@@ -295,31 +258,23 @@ def plot_experience_boxplot(data, col_name='experience', title='Experience Boxpl
     
     col_data = data[col_name].astype(str)
     col_data = np.char.strip(col_data)
-
-    # Tạo mảng rỗng để chứa numeric values
     numeric_vals = np.full(col_data.shape, np.nan, dtype=float)
 
-    # Case 1: "<1"
     mask_lt1 = col_data == '<1'
     numeric_vals[mask_lt1] = 0
 
-    # Case 2: ">20"
     mask_gt20 = col_data == '>20'
     numeric_vals[mask_gt20] = 21
 
-    # Case 3: numeric string ("1", "2", ..., "20")
+
     mask_numeric = np.char.isdigit(col_data)
     numeric_vals[mask_numeric] = col_data[mask_numeric].astype(float)
 
-    # Loại bỏ NaN
     numeric_vals_clean = numeric_vals[~np.isnan(numeric_vals)]
 
-    # Nếu không có dữ liệu đủ để vẽ
     if len(numeric_vals_clean) == 0:
         print("Không có dữ liệu hợp lệ để vẽ boxplot cho experience.")
         return
-
-    # Vẽ Boxplot
     plt.figure(figsize=(8, 6))
     plt.boxplot(numeric_vals_clean, vert=True, patch_artist=True,
                 boxprops=dict(facecolor="#A1C9F1", color='black'),
