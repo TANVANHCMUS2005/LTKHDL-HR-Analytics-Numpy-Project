@@ -49,6 +49,25 @@ This project constructs a complete Machine Learning pipeline built **from scratc
     * **Mixed Data Types:** Contains numerical (Training hours), ordinal (Education level), and nominal data (Gender, City).
     * **Missing Values:** Significant missing data in columns like `company_type` (~30%).
 
+### Feature Descriptions
+
+| Column Name | Description |
+| :--- | :--- |
+| `enrollee_id` | Unique ID for the candidate. |
+| `city` | City code. |
+| `city_development_index` | Scaled development index of the city. |
+| `gender` | Gender of the candidate. |
+| `relevent_experience` | Relevant experience of the candidate. |
+| `enrolled_university` | Type of university of the enrollee (e.g., Full time course, no enrollment). |
+| `education_level` | Education level of the candidate (e.g., Graduate, Masters). |
+| `major_discipline` | Education discipline of the enrollee (e.g., STEM, Humanities). |
+| `experience` | Total experience in years. |
+| `company_size` | Number of employees in the current employer's company. |
+| `company_type` | Type of employer (e.g., Pvt Ltd, NGO). |
+| `last_new_job` | Difference in years between previous job and current job. |
+| `training_hours` | Total training hours completed. |
+| `target` | 0 – Not looking for job change, 1 – Looking for a job change. |
+
 ## 5. Methodology
 This project strictly adheres to the **"NumPy Only"** rule for core algorithms and data processing.
 
