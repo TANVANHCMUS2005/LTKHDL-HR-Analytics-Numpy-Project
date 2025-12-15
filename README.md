@@ -68,7 +68,7 @@ This project constructs a complete Machine Learning pipeline built **from scratc
 | `training_hours` | Total training hours completed. |
 | `target` | 0 – Not looking for job change, 1 – Looking for a job change. |
 
-## 5. Methodology
+<!-- ## 5. Methodology
 This project strictly adheres to the **"NumPy Only"** rule for core algorithms and data processing.
 
 ### 5.1. Data Preprocessing Pipeline
@@ -95,7 +95,78 @@ This project strictly adheres to the **"NumPy Only"** rule for core algorithms a
 #### B. K-Nearest Neighbors (KNN)
 * **Principle:** Lazy learning. Prediction based on the majority vote of the $K$ nearest data points.
 * **Distance Metric:** Euclidean Distance (optimized via NumPy Broadcasting).
-    $$d(x, x') = \sqrt{\sum_{i=1}^{n} (x_i - x'_i)^2}$$
+    $$d(x, x') = \sqrt{\sum_{i=1}^{n} (x_i - x'_i)^2}$$ -->
+## 5. Methodology
+
+This project strictly adheres to the **"NumPy Only"** philosophy . Instead of relying on pre-built abstractions from Scikit-learn or Pandas, every step of the pipeline—from data manipulation to model optimization—is implemented using low-level array operations. The core principle driving this implementation is **Vectorization** , which replaces explicit Python `for` loops with optimized C-level array computations to ensure high performance.
+
+### 5.1. Data Preprocessing Pipeline
+The preprocessing stage transforms raw, unstructured CSV data into a clean, numerical matrix suitable for matrix multiplication .
+
+1.  **Data Loading & Parsing:**
+    * We utilize `np.genfromtxt` with `dtype=None` and `names=True` to load the dataset as a **Structured Array**. This allows us to handle mixed data types (integers, floats, and strings) within a single NumPy object, mimicking a DataFrame structure without using Pandas .
+
+2.  **Vectorized Data Cleaning:**
+    * **Handling Non-Standard Strings:** Features like `experience` contain values such as `<1` and `>20`. Instead of iterating row-by-row, we use **Boolean Masking** .
+        * *Logic:* Create a mask `mask = (data == '>20')` and assign values in bulk: `data[mask] = 21`.
+    * **Type Conversion:** String arrays are converted to floats using `astype(float)` only after all non-numeric characters are handled.
+
+3.  **Missing Value Imputation:**
+    * We identify missing values using `np.isnan()` (for numbers) or checking for empty strings (for categories) .
+    * **Numerical:** Missing values are filled with the **Median**, calculated via `np.nanmedian()` to ensure robustness against outliers .
+    * **Categorical:** Missing entries are treated as a distinct information signal and filled with a new category labeled `"Unknown"` .
+
+4.  **Feature Engineering & Encoding:**
+    * **Ordinal Encoding:** For features with inherent order (e.g., `education_level`), we map strings to integers (e.g., 'Primary School' $\to$ 0, 'Phd' $\to$ 4) using fast dictionary lookups mapped over the array.
+    * **Vectorized One-Hot Encoding:** For nominal features (e.g., `gender`, `city`), we avoid loops by using **NumPy Broadcasting** .
+        * Given a feature column $C$ of shape $(N,)$ and unique categories $U$ of shape $(K,)$, we perform an outer comparison `(C[:, None] == U[None, :])`.
+        * This results in a Boolean matrix of shape $(N, K)$, which is then cast to integers `(0, 1)`.
+
+5.  **Standardization (Z-Score):**
+    * To ensure Gradient Descent converges efficiently, all features are scaled to have $\mu=0$ and $\sigma=1$ :
+        $$X_{scaled} = \frac{X - \text{mean}(X)}{\text{std}(X)}$$
+    * *Implementation Detail:* We explicitly handle the division-by-zero edge case by setting scale to 1 where standard deviation is 0.
+
+### 5.2. Algorithms (Implemented from Scratch)
+
+#### A. Logistic Regression (The Parametric Approach)
+We implement a probabilistic linear classifier optimized via **Batch Gradient Descent** .
+
+* **Hypothesis Function:**
+    The model computes a weighted sum of inputs and passes it through the **Sigmoid** activation function to output a probability between 0 and 1.
+    $$\hat{y} = \sigma(z) = \frac{1}{1 + e^{-z}} \quad \text{where} \quad z = w \cdot X + b$$
+    * *Numerical Stability:* To prevent overflow/underflow in the exponential function, inputs to Sigmoid are clipped using `np.clip` .
+
+* **Loss Function (Binary Cross-Entropy):**
+    We minimize the Log Loss, which penalizes confident wrong predictions .
+    $$J(w,b) = - \frac{1}{m} \sum_{i=1}^{m} [y^{(i)}\log(\hat{y}^{(i)}) + (1-y^{(i)})\log(1-\hat{y}^{(i)})]$$
+
+* **Optimization (Vectorized Gradient Descent):**
+    Instead of updating weights sample-by-sample, we compute the gradient for the entire dataset in one matrix operation using `np.dot` .
+    $$dw = \frac{1}{m} X^T \cdot (\hat{y} - y)$$
+    $$db = \frac{1}{m} \sum (\hat{y} - y)$$
+    **Update Rule:**
+    $$w := w - \alpha \cdot dw$$
+
+#### B. K-Nearest Neighbors (The Non-Parametric Approach)
+KNN is implemented as a "Lazy Learner" that memorizes the training set and computes predictions at runtime .
+
+* **Vectorized Distance Calculation:**
+    The bottleneck of KNN is calculating distances. We bypass Python loops by using **Broadcasting** to compute the Euclidean Distance between a test sample $x$ and all training samples $X_{train}$ simultaneously :
+    $$d(x, X_{train}) = \sqrt{\sum (X_{train} - x)^2}$$
+    * *Implementation:* `np.sqrt(np.sum((self.X_train - x)**2, axis=1))`
+
+* **Neighbor Selection & Voting:**
+    1.  **Sorting:** We use `np.argsort` to find the indices of the $K$ smallest distances.
+    2.  **Voting:** We retrieve the labels of these $K$ neighbors and use `np.bincount().argmax()` to determine the majority class (Mode).
+
+### 5.3. Evaluation Metrics
+To evaluate model performance without `sklearn.metrics`, we implemented the confusion matrix components using **Boolean Indexing** :
+
+* **True Positives (TP):** `np.sum((y_true == 1) & (y_pred == 1))`
+* **False Negatives (FN):** `np.sum((y_true == 1) & (y_pred == 0))`
+* From these primitives, we derive **Precision**, **Recall**, and **F1-Score**.
+
 
 ## 6. Installation & Setup
 To avoid dependency conflicts, it is recommended to use a Virtual Environment.
@@ -171,7 +242,7 @@ The models were evaluated on the **Validation Set (20% hold-out)** using four ke
     * **Non-linearity:** The relationship between features (like `city_development_index`, `experience`) and the target is likely non-linear. Logistic Regression attempts to draw a straight line (linear boundary), failing to capture complex patterns.
     * **Local Clusters:** KNN excels at finding local clusters of similar candidates. By tuning `K=15`, we smoothed out the noise while retaining the ability to detect pockets of employees at risk of leaving.
 ![Model Comparison Charts](results/images/comparison_measure.png)
-![Model Comparison Charts](results/images/comparision_consusion_matrix.png)
+![Model Comparison Charts](results/images/comparision_confusion_matrix.png)
 ### 8.3. Conclusion
 **K-Nearest Neighbors (KNN)** is selected as the final model because:
 1.  It achieved a **higher F1-Score (0.42 vs 0.35)**.
